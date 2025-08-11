@@ -72,7 +72,7 @@ start_agent() {
 }
 
 # Start HelloWorld Agent
-start_agent "HelloWorld" 9999 "app.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld"
+start_agent "HelloWorld" 9999 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld"
 
 # Start Turso Agent
 start_agent "Turso" 4243 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso"
