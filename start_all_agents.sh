@@ -94,13 +94,13 @@ echo -e "\n🤖 Starting Marvin Agent..."
 # Sempre usar o método direto, sem daemon por enquanto
 start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 
-# CrewAI Marketing Agents - PADRÃO A2A OBRIGATÓRIO
-# IMPORTANTE: Cada agente tem seu próprio diretório com server.py, agent.py e agent_executor.py
+# CrewAI Marketing Agents - Estrutura Unificada
+# NOTA: CrewAI usa um único server.py com parâmetros para diferentes agentes
 echo -e "\n🎯 Starting CrewAI Marketing Orchestrator Agent..."
-start_agent "CrewAI-Orchestrator" 8000 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/orchestrator"
+start_agent "CrewAI-Orchestrator" 8000 "server.py orchestrator" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt"
 
 echo -e "\n✍️ Starting CrewAI Marketing Copywriter Agent..."
-start_agent "CrewAI-Copywriter" 8001 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/copywriter"
+start_agent "CrewAI-Copywriter" 8001 "server.py copywriter" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt"
 
 # Wait a moment and test discovery
 echo -e "\n🔍 Testing Agent Discovery..."
