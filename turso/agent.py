@@ -71,7 +71,7 @@ class TursoAgent:
         try:
             if TURSO_DATABASE_URL == "file:local.db" or not TURSO_AUTH_TOKEN:
                 logger.info("Usando Turso local (SQLite)")
-                client = libsql.connect("local.db", sync_url=None, auth_token=None)
+                client = libsql.connect("local.db")
             else:
                 client = libsql.connect(
                     "local.db",
