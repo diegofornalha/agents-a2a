@@ -3,6 +3,8 @@ This is a sample agent that uses the Marvin framework to extract structured cont
 It is integrated with the Agent2Agent (A2A) protocol.
 """
 
+print("Marvin __main__.py loaded successfully")
+
 import logging
 
 import click
@@ -14,12 +16,12 @@ from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 from dotenv import load_dotenv
 from pydantic import BaseModel, EmailStr, Field
 
-from agents.marvin.agent import ExtractorAgent
-from agents.marvin.agent_executor import ExtractorAgentExecutor
+from agent import ExtractorAgent
+from agent_executor import ExtractorAgentExecutor
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -46,23 +48,33 @@ class ContactInfo(BaseModel):
 )
 def main(host, port, result_type, instructions):
     """Starts the Marvin Contact Extractor Agent server."""
+    print(f"Starting Marvin Contact Extractor Agent on {host}:{port}")
+    logger.info(f"Starting Marvin Contact Extractor Agent on {host}:{port}")
     try:
         result_type = eval(result_type)
+        logger.info(f"Result type: {result_type}")
     except Exception as e:
         logger.error(f"Invalid result type: {e}")
         exit(1)
+    
+    logger.info("Creating ExtractorAgent...")
     agent = ExtractorAgent(instructions=instructions, result_type=result_type)
+    
+    logger.info("Creating request handler...")
     httpx_client = httpx.AsyncClient()
     request_handler = DefaultRequestHandler(
         agent_executor=ExtractorAgentExecutor(agent=agent),
         task_store=InMemoryTaskStore(),
-        push_notifier=None,
+        push_sender=None,
     )
+    
+    logger.info("Creating A2A server...")
     server = A2AStarletteApplication(
         agent_card=get_agent_card(host, port), http_handler=request_handler
     )
+    
+    logger.info("Starting uvicorn server...")
     import uvicorn
-
     uvicorn.run(server.build(), host=host, port=port)
 
 
@@ -88,3 +100,8 @@ def get_agent_card(host: str, port: int):
         capabilities=capabilities,
         skills=[skill],
     )
+
+
+if __name__ == "__main__":
+    print("Calling main() function...")
+    main()

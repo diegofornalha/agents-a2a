@@ -41,10 +41,10 @@ class ExtractorAgentExecutor(AgentExecutor):
         async for item in self.agent.stream(query, task.contextId):
             is_task_complete = item["is_task_complete"]
             require_user_input = item["require_user_input"]
-            content = item["content"]
+            text_parts = item.get("text_parts", [])
 
             logger.info(
-                f"Stream item received: complete={is_task_complete}, require_input={require_user_input}, content_len={len(str(content))}"
+                f"Stream item received: complete={is_task_complete}, require_input={require_user_input}, text_parts_len={len(str(text_parts))}"
             )
 
             agent_outcome = await self.agent.invoke(query, task.contextId)
