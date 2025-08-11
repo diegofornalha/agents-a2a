@@ -125,3 +125,4 @@ dmypy.json
 # Cython debug symbols
 cython_debug/ 
 context-engineering-turso
+turso/.claude-flow*

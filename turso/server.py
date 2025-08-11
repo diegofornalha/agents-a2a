@@ -17,8 +17,8 @@ load_dotenv()
 # Adicionar o diretório pai ao path se necessário
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from turso.agent import TursoAgent
-from turso.agent_executor import TursoAgentExecutor
+from agent import TursoAgent
+from agent_executor import TursoAgentExecutor
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
