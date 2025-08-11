@@ -126,3 +126,4 @@ dmypy.json
 cython_debug/ 
 context-engineering-turso
 turso/.claude-flow*
+turso/uv.lock
