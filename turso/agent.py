@@ -14,7 +14,8 @@ import libsql_experimental as libsql
 logger = logging.getLogger(__name__)
 
 # Configuração do banco de dados
-TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "file:local.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "bd", "turso.db")
+TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", f"file:{DB_PATH}")
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "")
 
 
@@ -69,12 +70,15 @@ class TursoAgent:
     def _init_database(self):
         """Inicializar conexão com Turso"""
         try:
-            if TURSO_DATABASE_URL == "file:local.db" or not TURSO_AUTH_TOKEN:
-                logger.info("Usando Turso local (SQLite)")
-                client = libsql.connect("local.db")
+            if TURSO_DATABASE_URL.startswith("file:") or not TURSO_AUTH_TOKEN:
+                logger.info(f"Usando Turso local (SQLite): {DB_PATH}")
+                # Garantir que o diretório existe
+                os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+                client = libsql.connect(DB_PATH)
             else:
+                logger.info(f"Usando Turso Cloud: {TURSO_DATABASE_URL}")
                 client = libsql.connect(
-                    "local.db",
+                    DB_PATH,
                     sync_url=TURSO_DATABASE_URL,
                     auth_token=TURSO_AUTH_TOKEN
                 )
@@ -89,7 +93,8 @@ class TursoAgent:
 
     def _create_tables(self, client):
         """Criar tabelas do banco de dados"""
-        queries = [
+        # Criar tabelas primeiro
+        tables = [
             """CREATE TABLE IF NOT EXISTS agent_data (
                 id TEXT PRIMARY KEY,
                 agent_id TEXT NOT NULL,
@@ -111,15 +116,25 @@ class TursoAgent:
                 content TEXT NOT NULL,
                 embedding TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )""",
-            
+            )"""
+        ]
+        
+        for query in tables:
+            client.execute(query)
+        client.commit()
+        
+        # Criar índices depois das tabelas
+        indices = [
             """CREATE INDEX IF NOT EXISTS idx_agent_key ON agent_data(agent_id, key)""",
             """CREATE INDEX IF NOT EXISTS idx_session ON agent_data(session_id)""",
             """CREATE INDEX IF NOT EXISTS idx_expires ON agent_data(expires_at)"""
         ]
         
-        for query in queries:
-            client.execute(query)
+        for query in indices:
+            try:
+                client.execute(query)
+            except Exception as e:
+                logger.debug(f"Índice pode já existir: {e}")
         client.commit()
 
     async def invoke(self, query: str, sessionId: str) -> dict[str, Any]:

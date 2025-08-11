@@ -127,6 +127,4 @@ cython_debug/
 context-engineering-turso
 turso/.claude-flow*
 turso/uv.lock
-turso/local.db-info
-turso/local.db-shm
-turso/local.db-wal
+turso/bd/*
