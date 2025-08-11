@@ -93,6 +93,22 @@ else
     stop_agent_port "Marvin" 10030
 fi
 
+# Stop CrewAI Orchestrator Agent
+echo -e "\n📍 Checking CrewAI Orchestrator Agent..."
+if [ -f "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/CrewAI-Orchestrator.pid" ]; then
+    stop_agent_pid "CrewAI-Orchestrator" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/CrewAI-Orchestrator.pid"
+else
+    stop_agent_port "CrewAI-Orchestrator" 8000
+fi
+
+# Stop CrewAI Copywriter Agent
+echo -e "\n📍 Checking CrewAI Copywriter Agent..."
+if [ -f "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/CrewAI-Copywriter.pid" ]; then
+    stop_agent_pid "CrewAI-Copywriter" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/CrewAI-Copywriter.pid"
+else
+    stop_agent_port "CrewAI-Copywriter" 8001
+fi
+
 # Stop any other Python processes that might be agents
 echo -e "\n🔍 Looking for other agent processes..."
 
@@ -117,6 +133,7 @@ echo -e "${YELLOW}📝 Removing log files...${NC}"
 rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/*.log 2>/dev/null
 rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/*.log 2>/dev/null
 rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/*.log 2>/dev/null
+rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt/*.log 2>/dev/null
 rm -f *.log 2>/dev/null
 echo -e "${GREEN}✅ Log files cleaned${NC}"
 
@@ -146,6 +163,20 @@ if lsof -ti:10030 -sTCP:LISTEN > /dev/null 2>&1; then
     RUNNING=true
 else
     echo -e "${GREEN}✅ Port 10030 is free${NC}"
+fi
+
+if lsof -ti:8000 -sTCP:LISTEN > /dev/null 2>&1; then
+    echo -e "${RED}❌ Port 8000 still in use${NC}"
+    RUNNING=true
+else
+    echo -e "${GREEN}✅ Port 8000 is free${NC}"
+fi
+
+if lsof -ti:8001 -sTCP:LISTEN > /dev/null 2>&1; then
+    echo -e "${RED}❌ Port 8001 still in use${NC}"
+    RUNNING=true
+else
+    echo -e "${GREEN}✅ Port 8001 is free${NC}"
 fi
 
 # Summary

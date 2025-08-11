@@ -35,13 +35,25 @@ start_agent() {
         
         # Start agent in background
         cd "$dir"
-        if [ -f "$command" ]; then
+        # Split command into file and arguments
+        cmd_file=$(echo "$command" | cut -d' ' -f1)
+        cmd_args=$(echo "$command" | cut -s -d' ' -f2-)
+        
+        if [ -f "$cmd_file" ]; then
             echo -e "${YELLOW}📝 Executing: $command${NC}"
             # Use uv if pyproject.toml exists, otherwise use python
             if [ -f "pyproject.toml" ]; then
-                nohup uv run python "$command" > "${name}.log" 2>&1 &
+                if [ -n "$cmd_args" ]; then
+                    nohup uv run python "$cmd_file" $cmd_args > "${name}.log" 2>&1 &
+                else
+                    nohup uv run python "$cmd_file" > "${name}.log" 2>&1 &
+                fi
             else
-                nohup python "$command" > "${name}.log" 2>&1 &
+                if [ -n "$cmd_args" ]; then
+                    nohup python "$cmd_file" $cmd_args > "${name}.log" 2>&1 &
+                else
+                    nohup python "$cmd_file" > "${name}.log" 2>&1 &
+                fi
             fi
             echo $! > "${name}.pid"
             sleep 8  # Dar mais tempo para iniciar, especialmente com uv
@@ -82,6 +94,13 @@ echo -e "\n🤖 Starting Marvin Agent..."
 # Sempre usar o método direto, sem daemon por enquanto
 start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 
+# Start CrewAI Marketing Orchestrator Agent
+echo -e "\n🎯 Starting CrewAI Marketing Orchestrator Agent..."
+start_agent "CrewAI-Orchestrator" 8000 "server.py orchestrator" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt"
+
+# Start CrewAI Marketing Copywriter Agent
+echo -e "\n✍️ Starting CrewAI Marketing Copywriter Agent..."
+start_agent "CrewAI-Copywriter" 8001 "server.py copywriter" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/crewai-mkt"
 
 # Wait a moment and test discovery
 echo -e "\n🔍 Testing Agent Discovery..."
@@ -108,6 +127,8 @@ test_discovery() {
 test_discovery "HelloWorld" "http://localhost:9999/.well-known/agent.json"
 test_discovery "Turso" "http://localhost:4243/.well-known/agent.json"
 test_discovery "Marvin" "http://localhost:10030/.well-known/agent.json"
+test_discovery "CrewAI-Orchestrator" "http://localhost:8000/.well-known/agent.json"
+test_discovery "CrewAI-Copywriter" "http://localhost:8001/.well-known/agent.json"
 
 # Summary
 echo -e "\n🎯 Startup Summary:"
@@ -127,6 +148,8 @@ echo -e "\n🔗 Agent URLs:"
 echo "   • HelloWorld: http://localhost:9999"
 echo "   • Turso: http://localhost:4243"
 echo "   • Marvin: http://localhost:10030"
+echo "   • CrewAI Orchestrator: http://localhost:8000"
+echo "   • CrewAI Copywriter: http://localhost:8001"
 
 echo -e "\n💡 Next Steps:"
 echo "   1. Test inter-agent communication"
