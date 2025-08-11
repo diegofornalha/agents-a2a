@@ -117,18 +117,14 @@ if [ ! -z "$SERVER_PIDS" ]; then
     echo -e "${GREEN}✅ Stopped server.py processes${NC}"
 fi
 
-# Clean up log files (optional)
-echo -e "\n🧹 Cleanup options:"
-read -p "Do you want to clean up log files? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW}📝 Removing log files...${NC}"
-    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/*.log
-    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/*.log
-    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/*.log
-    rm -f *.log
-    echo -e "${GREEN}✅ Log files cleaned${NC}"
-fi
+# Clean up log files automatically
+echo -e "\n🧹 Cleaning up log files..."
+echo -e "${YELLOW}📝 Removing log files...${NC}"
+rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/*.log 2>/dev/null
+rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/*.log 2>/dev/null
+rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/*.log 2>/dev/null
+rm -f *.log 2>/dev/null
+echo -e "${GREEN}✅ Log files cleaned${NC}"
 
 # Verify all agents are stopped
 echo -e "\n🔍 Verifying shutdown..."

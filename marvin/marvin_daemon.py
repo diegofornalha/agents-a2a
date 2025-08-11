@@ -80,12 +80,14 @@ class MarvinDaemon:
         try:
             self.logger.info("🚀 Iniciando processo Marvin...")
             
-            # Usar o Python do ambiente virtual da UI onde a2a está instalado
-            ui_venv_python = "/Users/agents/Desktop/claude-20x/ui/.venv/bin/python"
+            # Usar uv para executar com as dependências corretas
+            ui_venv_python = "uv"
             
             # Comando para iniciar o Marvin
             cmd = [
-                ui_venv_python, 
+                ui_venv_python,
+                "run",
+                "python",
                 str(self.marvin_dir / "server.py")
             ]
             

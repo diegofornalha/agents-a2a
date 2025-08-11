@@ -15,8 +15,8 @@ load_dotenv()
 # Adicionar o diretório pai ao path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from agents.marvin.agent import ExtractorAgent
-from agents.marvin.agent_executor import ExtractorAgentExecutor
+from agent import ExtractorAgent
+from agent_executor import ExtractorAgentExecutor
 from a2a.server.apps import A2AStarletteApplication
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
