@@ -111,7 +111,7 @@ O arquivo `a2a-config.json` contém todas as configurações do agente:
           "capabilities": ["sustainability", "monitoring", "health_check"]
         },
         "helloworld": {
-          "url": "http://localhost:9998",
+          "url": "http://localhost:9999",
           "capabilities": ["hello", "basic_tasks"]
         },
         "marvin": {

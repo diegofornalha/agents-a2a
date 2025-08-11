@@ -32,7 +32,7 @@ class A2AAgent:
                 "last_seen": datetime.now()
             },
             "helloworld": {
-                "url": "http://localhost:9998",
+                "url": "http://localhost:9999",
                 "capabilities": ["hello", "basic_tasks"],
                 "status": "active", 
                 "last_seen": datetime.now()
