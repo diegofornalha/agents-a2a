@@ -87,16 +87,10 @@ fi
 
 # Stop Marvin Agent
 echo -e "\n📍 Checking Marvin Agent..."
-cd "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
-if [ -f "marvin_control.sh" ]; then
-    echo -e "${YELLOW}📝 Using Marvin daemon control script${NC}"
-    ./marvin_control.sh stop
+if [ -f "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/Marvin.pid" ]; then
+    stop_agent_pid "Marvin" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/Marvin.pid"
 else
-    if [ -f "Marvin.pid" ]; then
-        stop_agent_pid "Marvin" "Marvin.pid"
-    else
-        stop_agent_port "Marvin" 10030
-    fi
+    stop_agent_port "Marvin" 10030
 fi
 
 # Stop any other Python processes that might be agents

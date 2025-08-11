@@ -129,4 +129,4 @@ turso/.claude-flow*
 turso/uv.lock
 turso/bd/*
 turso/context-engineering-turso/*
-prp-crewai-system/*
+crewai-mkt/*

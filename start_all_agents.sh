@@ -44,12 +44,15 @@ start_agent() {
                 nohup python "$command" > "${name}.log" 2>&1 &
             fi
             echo $! > "${name}.pid"
-            sleep 2
+            sleep 8  # Dar mais tempo para iniciar, especialmente com uv
             
-            # Verify it started
+            # Verify it started - porta deve estar OCUPADA agora
             if check_port $port; then
+                # Porta ainda livre = falhou
                 echo -e "${RED}❌ Failed to start ${name}${NC}"
+                rm -f "${name}.pid"
             else
+                # Porta ocupada = sucesso
                 echo -e "${GREEN}✅ ${name} started successfully (PID: $(cat ${name}.pid))${NC}"
             fi
         else
@@ -74,31 +77,15 @@ start_agent "HelloWorld" 9999 "app.py" "/Users/agents/Desktop/claude-20x/agents-
 # Start Turso Agent
 start_agent "Turso" 4243 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso"
 
-# Start Marvin Agent (if daemon is not running)
-echo -e "\n🤖 Checking Marvin Agent..."
-cd "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
-if [ -f "marvin_control.sh" ]; then
-    echo -e "${YELLOW}📝 Using Marvin daemon control script${NC}"
-    ./marvin_control.sh status
-    if [ $? -ne 0 ]; then
-        echo -e "${YELLOW}📝 Starting Marvin daemon...${NC}"
-        ./marvin_control.sh start
-    else
-        echo -e "${GREEN}✅ Marvin daemon already running${NC}"
-    fi
-else
-    start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
-fi
+# Start Marvin Agent
+echo -e "\n🤖 Starting Marvin Agent..."
+# Sempre usar o método direto, sem daemon por enquanto
+start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 
-# Note about other agents
-echo -e "\n📋 Other Agents Status:"
-echo -e "${YELLOW}⚙️  A2A Coordinator (a2a-estudo): Requires implementation${NC}"
-echo -e "${YELLOW}⚙️  Gemini Assistant: Requires GEMINI_API_KEY configuration${NC}"
-echo -e "${YELLOW}⚙️  A2A Python SDK: Framework/library - no server to start${NC}"
 
 # Wait a moment and test discovery
 echo -e "\n🔍 Testing Agent Discovery..."
-sleep 3
+sleep 5
 
 # Test discovery endpoints
 test_discovery() {
@@ -140,14 +127,11 @@ echo -e "\n🔗 Agent URLs:"
 echo "   • HelloWorld: http://localhost:9999"
 echo "   • Turso: http://localhost:4243"
 echo "   • Marvin: http://localhost:10030"
-echo "   • A2A Coordinator: http://localhost:8887 (needs implementation)"
-echo "   • Gemini: http://localhost:8886 (needs configuration)"
 
 echo -e "\n💡 Next Steps:"
-echo "   1. Configure GEMINI_API_KEY for Gemini agent"
-echo "   2. Implement A2A Coordinator server"
-echo "   3. Test inter-agent communication"
-echo "   4. Monitor agent logs for issues"
+echo "   1. Test inter-agent communication"
+echo "   2. Monitor agent logs for issues"
+echo "   3. Use agents with Claude Flow coordination"
 
 echo -e "\n🛠️  Management Commands:"
 echo "   • Stop all: pkill -f 'python.*app.py|python.*server.py'"
