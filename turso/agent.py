@@ -186,7 +186,7 @@ class TursoAgent:
                 """INSERT OR REPLACE INTO agent_data 
                    (id, agent_id, session_id, key, value, metadata, expires_at, updated_at) 
                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)""",
-                [
+                (
                     data_id,
                     self.agent_id,
                     sessionId,
@@ -194,7 +194,7 @@ class TursoAgent:
                     json.dumps(value),
                     json.dumps(metadata),
                     expires_at
-                ]
+                )
             )
             self.db_client.commit()
             
@@ -230,7 +230,7 @@ class TursoAgent:
                    WHERE agent_id = ? AND key = ? 
                    AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
                    ORDER BY updated_at DESC LIMIT 1""",
-                [self.agent_id, key]
+                (self.agent_id, key)
             )
             
             rows = result.fetchall()
