@@ -2,7 +2,7 @@
 # Script de controle para o Marvin Agent Daemon
 # Uso: ./marvin_control.sh [start|stop|restart|status|logs]
 
-MARVIN_DIR="/Users/agents/Desktop/claude-20x/agents/marvin"
+MARVIN_DIR="/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 DAEMON_SCRIPT="$MARVIN_DIR/marvin_daemon.py"
 LOG_FILE="$MARVIN_DIR/logs/marvin_daemon.log"
 

@@ -71,15 +71,23 @@ stop_agent_port() {
 
 # Stop HelloWorld Agent
 echo -e "\n📍 Checking HelloWorld Agent..."
-if [ -f "/Users/agents/Desktop/claude-20x/agents/helloworld/HelloWorld.pid" ]; then
-    stop_agent_pid "HelloWorld" "/Users/agents/Desktop/claude-20x/agents/helloworld/HelloWorld.pid"
+if [ -f "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/HelloWorld.pid" ]; then
+    stop_agent_pid "HelloWorld" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/HelloWorld.pid"
 else
     stop_agent_port "HelloWorld" 9999
 fi
 
+# Stop Turso Agent
+echo -e "\n📍 Checking Turso Agent..."
+if [ -f "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/Turso.pid" ]; then
+    stop_agent_pid "Turso" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/Turso.pid"
+else
+    stop_agent_port "Turso" 4243
+fi
+
 # Stop Marvin Agent
 echo -e "\n📍 Checking Marvin Agent..."
-cd "/Users/agents/Desktop/claude-20x/agents/marvin"
+cd "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 if [ -f "marvin_control.sh" ]; then
     echo -e "${YELLOW}📝 Using Marvin daemon control script${NC}"
     ./marvin_control.sh stop
@@ -115,8 +123,9 @@ read -p "Do you want to clean up log files? (y/n): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}📝 Removing log files...${NC}"
-    rm -f /Users/agents/Desktop/claude-20x/agents/helloworld/*.log
-    rm -f /Users/agents/Desktop/claude-20x/agents/marvin/*.log
+    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld/*.log
+    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso/*.log
+    rm -f /Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin/*.log
     rm -f *.log
     echo -e "${GREEN}✅ Log files cleaned${NC}"
 fi
@@ -133,6 +142,13 @@ if lsof -ti:9999 -sTCP:LISTEN > /dev/null 2>&1; then
     RUNNING=true
 else
     echo -e "${GREEN}✅ Port 9999 is free${NC}"
+fi
+
+if lsof -ti:4243 -sTCP:LISTEN > /dev/null 2>&1; then
+    echo -e "${RED}❌ Port 4243 still in use${NC}"
+    RUNNING=true
+else
+    echo -e "${GREEN}✅ Port 4243 is free${NC}"
 fi
 
 if lsof -ti:10030 -sTCP:LISTEN > /dev/null 2>&1; then
@@ -158,7 +174,7 @@ fi
 
 echo -e "\n💡 Management Commands:"
 echo "   • Start all: ./start_all_agents.sh"
-echo "   • Check ports: lsof -i:9999,10030"
+echo "   • Check ports: lsof -i:9999,4243,10030"
 echo "   • Force kill all: pkill -9 -f 'python.*app.py|python.*server.py'"
 echo "   • View processes: ps aux | grep python"
 

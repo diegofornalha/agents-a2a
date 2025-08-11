@@ -37,7 +37,12 @@ start_agent() {
         cd "$dir"
         if [ -f "$command" ]; then
             echo -e "${YELLOW}📝 Executing: $command${NC}"
-            nohup python "$command" > "${name}.log" 2>&1 &
+            # Use uv if pyproject.toml exists, otherwise use python
+            if [ -f "pyproject.toml" ]; then
+                nohup uv run python "$command" > "${name}.log" 2>&1 &
+            else
+                nohup python "$command" > "${name}.log" 2>&1 &
+            fi
             echo $! > "${name}.pid"
             sleep 2
             
@@ -64,11 +69,14 @@ start_agent() {
 }
 
 # Start HelloWorld Agent
-start_agent "HelloWorld" 9999 "app.py" "/Users/agents/Desktop/claude-20x/agents/helloworld"
+start_agent "HelloWorld" 9999 "app.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/helloworld"
+
+# Start Turso Agent
+start_agent "Turso" 4243 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/turso"
 
 # Start Marvin Agent (if daemon is not running)
 echo -e "\n🤖 Checking Marvin Agent..."
-cd "/Users/agents/Desktop/claude-20x/agents/marvin"
+cd "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 if [ -f "marvin_control.sh" ]; then
     echo -e "${YELLOW}📝 Using Marvin daemon control script${NC}"
     ./marvin_control.sh status
@@ -79,7 +87,7 @@ if [ -f "marvin_control.sh" ]; then
         echo -e "${GREEN}✅ Marvin daemon already running${NC}"
     fi
 else
-    start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents/marvin"
+    start_agent "Marvin" 10030 "server.py" "/Users/agents/Desktop/claude-20x/agents-a2a/.conductor/hangzhou/marvin"
 fi
 
 # Note about other agents
@@ -111,6 +119,7 @@ test_discovery() {
 }
 
 test_discovery "HelloWorld" "http://localhost:9999/.well-known/agent.json"
+test_discovery "Turso" "http://localhost:4243/.well-known/agent.json"
 test_discovery "Marvin" "http://localhost:10030/.well-known/agent.json"
 
 # Summary
@@ -129,6 +138,7 @@ fi
 
 echo -e "\n🔗 Agent URLs:"
 echo "   • HelloWorld: http://localhost:9999"
+echo "   • Turso: http://localhost:4243"
 echo "   • Marvin: http://localhost:10030"
 echo "   • A2A Coordinator: http://localhost:8887 (needs implementation)"
 echo "   • Gemini: http://localhost:8886 (needs configuration)"

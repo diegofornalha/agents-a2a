@@ -284,7 +284,7 @@ class TursoAgent:
                     "data": None
                 }
             
-            result = self.db_client.execute(sql, [])
+            result = self.db_client.execute(sql)
             rows = result.fetchall()
             
             return {
@@ -335,7 +335,7 @@ class TursoAgent:
         if query_lower.startswith("list"):
             result = self.db_client.execute(
                 "SELECT key, updated_at FROM agent_data WHERE agent_id = ? ORDER BY updated_at DESC",
-                [self.agent_id]
+                (self.agent_id,)
             )
             rows = result.fetchall()
             
@@ -356,7 +356,7 @@ class TursoAgent:
         if query_lower.startswith("stats"):
             result = self.db_client.execute(
                 "SELECT COUNT(*) as total, COUNT(DISTINCT key) as unique_keys FROM agent_data WHERE agent_id = ?",
-                [self.agent_id]
+                (self.agent_id,)
             )
             row = result.fetchone()
             
