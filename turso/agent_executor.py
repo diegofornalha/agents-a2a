@@ -1,107 +1,157 @@
-import asyncio
-import json
 import logging
-from collections.abc import AsyncIterable
-from typing import Any
 
-from a2a.agent_executor import AgentExecutor
+from a2a.server.agent_execution import AgentExecutor, RequestContext
+from a2a.server.events.event_queue import EventQueue
+from a2a.types import (
+    TaskArtifactUpdateEvent,
+    TaskState,
+    TaskStatus,
+    TaskStatusUpdateEvent,
+)
+from a2a.utils import (
+    new_agent_text_message,
+    new_data_artifact,
+    new_task,
+    new_text_artifact,
+)
 
-from .agent import TursoAgent
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class TursoAgentExecutor(AgentExecutor):
-    """Executor para o TursoAgent seguindo padrão A2A"""
+    """
+    Turso Database agent executor following A2A pattern.
+    """
 
-    def __init__(self, agent: TursoAgent):
+    def __init__(self, agent):
         self.agent = agent
 
-    def can_handle(self, content: Any) -> bool:
-        """Verifica se pode processar o conteúdo
-        
-        Args:
-            content: Conteúdo a ser verificado
-            
-        Returns:
-            True se pode processar o conteúdo
-        """
-        # Aceita strings (comandos ou JSON) e dicionários
-        if isinstance(content, str):
-            return True
-        
-        if isinstance(content, dict):
-            # Verifica se tem estrutura esperada
-            return any(key in content for key in ["operation", "key", "value", "sql"])
-        
-        return False
+    async def execute(
+        self,
+        context: RequestContext,
+        event_queue: EventQueue,
+    ) -> None:
+        query = context.get_user_input()
+        task = context.current_task
+        if not task:
+            task = new_task(context.message)
+            await event_queue.enqueue_event(task)
 
-    async def invoke(self, content: Any, session_id: str) -> dict[str, Any]:
-        """Invoca o agente para processar o conteúdo
-        
-        Args:
-            content: Conteúdo a ser processado
-            session_id: ID da sessão
-            
-        Returns:
-            Resultado do processamento
-        """
+        # Processar a query com o agente Turso
         try:
-            # Converter dicionário para JSON string se necessário
-            if isinstance(content, dict):
-                content = json.dumps(content)
-            elif not isinstance(content, str):
-                content = str(content)
+            result = await self.agent.invoke(query, task.contextId)
             
-            # Chamar o agente
-            result = await self.agent.invoke(content, session_id)
+            # Extrair informações do resultado
+            is_task_complete = result.get("is_task_complete", False)
+            require_user_input = result.get("require_user_input", False)
+            text_parts = result.get("text_parts", [])
+            data = result.get("data", {})
             
-            # Log do resultado
             logger.info(
-                f"[Session {session_id}] Processamento concluído. "
-                f"Task complete: {result.get('is_task_complete', False)}"
+                f"Turso result: complete={is_task_complete}, require_input={require_user_input}, "
+                f"has_data={bool(data)}, text_parts_len={len(text_parts)}"
             )
             
-            return result
+            # Converter text_parts para string
+            text_content = ""
+            if text_parts:
+                if isinstance(text_parts, list):
+                    text_content = "\n".join([
+                        part.text if hasattr(part, 'text') else str(part) 
+                        for part in text_parts
+                    ])
+                else:
+                    text_content = str(text_parts)
             
-        except Exception as e:
-            logger.error(f"Erro no executor para sessão {session_id}: {e}")
-            return {
-                "is_task_complete": False,
-                "require_user_input": True,
-                "text_parts": [
-                    {"type": "text", "text": f"❌ Erro no processamento: {str(e)}"}
-                ],
-                "data": None
-            }
-
-    async def stream(
-        self, content: Any, session_id: str
-    ) -> AsyncIterable[dict[str, Any]]:
-        """Stream de respostas do agente
-        
-        Args:
-            content: Conteúdo a ser processado
-            session_id: ID da sessão
+            # Criar artefato apropriado
+            if data:
+                artifact = new_data_artifact(
+                    name="turso_result",
+                    description="Result from Turso database operation",
+                    data=data,
+                )
+            else:
+                artifact = new_text_artifact(
+                    name="turso_result",
+                    description="Result from Turso database operation",
+                    text=text_content or "Operation completed successfully",
+                )
             
-        Yields:
-            Partes da resposta em stream
-        """
-        try:
-            # Converter para string se necessário
-            if isinstance(content, dict):
-                content = json.dumps(content)
-            elif not isinstance(content, str):
-                content = str(content)
-            
-            # Usar o stream do agente
-            async for chunk in self.agent.stream(content, session_id):
-                yield chunk
+            # Enviar eventos baseados no estado
+            if require_user_input:
+                # Requer input do usuário
+                await event_queue.enqueue_event(
+                    TaskStatusUpdateEvent(
+                        status=TaskStatus(
+                            state=TaskState.input_required,
+                            message=new_agent_text_message(
+                                text_content or "Please provide additional information",
+                                task.contextId,
+                                task.id,
+                            ),
+                        ),
+                        final=True,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                    )
+                )
+            elif is_task_complete:
+                # Tarefa completa
+                await event_queue.enqueue_event(
+                    TaskArtifactUpdateEvent(
+                        append=False,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                        lastChunk=True,
+                        artifact=artifact,
+                    )
+                )
+                await event_queue.enqueue_event(
+                    TaskStatusUpdateEvent(
+                        status=TaskStatus(state=TaskState.completed),
+                        final=True,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                    )
+                )
+            else:
+                # Ainda processando
+                await event_queue.enqueue_event(
+                    TaskStatusUpdateEvent(
+                        status=TaskStatus(
+                            state=TaskState.working,
+                            message=new_agent_text_message(
+                                "Processing database operation...",
+                                task.contextId,
+                                task.id,
+                            ),
+                        ),
+                        final=False,
+                        contextId=task.contextId,
+                        taskId=task.id,
+                    )
+                )
                 
         except Exception as e:
-            logger.error(f"Erro no stream para sessão {session_id}: {e}")
-            yield {
-                "is_task_complete": False,
-                "require_user_input": True,
-                "content": f"❌ Erro no stream: {str(e)}"
-            }
+            logger.error(f"Error executing Turso agent: {str(e)}")
+            # Enviar evento de erro
+            await event_queue.enqueue_event(
+                TaskStatusUpdateEvent(
+                    status=TaskStatus(
+                        state=TaskState.failed,
+                        message=new_agent_text_message(
+                            f"Error: {str(e)}",
+                            task.contextId,
+                            task.id,
+                        ),
+                    ),
+                    final=True,
+                    contextId=task.contextId,
+                    taskId=task.id,
+                )
+            )
+
+    async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
+        """Cancel operation - not supported for database operations"""
+        raise Exception("Cancel not supported for database operations")
